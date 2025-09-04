@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ley de Charles — Cilindro-Émbolo (Isobárico)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    .columns { display: flex; flex-direction: row; justify-content: center; align-items: flex-start; gap: 20px; padding: 10px; }
+    .simulator, .data-panel { background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .simulator { width: 500px; height: 500px; position: relative; }
+    .data-panel { width: 500px; min-height: 500px; }
+    #workArea { position: relative; width: 100%; height: 100%; background: #fff; display: flex; justify-content: center; align-items: center; }
+    canvas { background: #fff; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 5px; text-align: center; }
+    .form-row { margin: 10px 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  </style>
+</head>
+<body>
+  <div class="columns">
+    <!-- Simulador -->
+    <div class="simulator">
+      <div id="workArea">
+        <canvas id="cylinderCanvas" width="480" height="480"></canvas>
+      </div>
+      <div style="text-align:center; margin-top:10px;">
+        <label for="energyInput">Energía suministrada:</label>
+        <input type="range" id="energyInput" min="0" max="100" value="0">
+      </div>
+    </div>
+
+    <!-- Panel de datos -->
+    <div class="data-panel">
+      <h3>Registro de datos</h3>
+      <div class="form-row">
+        <label>T (°C): </label>
+        <input type="number" id="tempC">
+        <label>T (K): </label>
+        <input type="number" id="tempK" readonly>
+        <label>V (L): </label>
+        <input type="number" id="volL">
+        <button onclick="addData()">Añadir</button>
+        <button onclick="clearData()">Borrar</button>
+<!--        <button onclick="captureFromSimulator()">Capturar simulador</button>-->
+      </div>
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>T (°C)</th>
+            <th>T (K)</th>
+            <th>V (L)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <canvas id="chartCanvas" width="480" height="300" style="margin-top:10px;"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // ===== Panel de datos y gráfica (puntos, sin línea) =====
+    const tempCInput = document.getElementById('tempC');
+    const tempKInput = document.getElementById('tempK');
+    const volLInput = document.getElementById('volL');
+    const dataTableBody = document.getElementById('dataTable').querySelector('tbody');
+
+    tempCInput.addEventListener('input', () => {
+      let c = parseFloat(tempCInput.value);
+      if (!isNaN(c)) tempKInput.value = (c + 273.15).toFixed(2); else tempKInput.value = '';
+    });
+
+    let chart = new Chart(document.getElementById('chartCanvas'), {
+      type: 'scatter',
+      data: { datasets: [{ label: 'V (L) vs T (K)', data: [], showLine: false }] },
+      options: {
+        responsive: false,
+        scales: {
+          x: { title: { display: true, text: 'T (K)' } },
+          y: { title: { display: true, text: 'Volumen (L)' } }
+        }
+      }
+    });
+
+    function addData() {
+      let c = parseFloat(tempCInput.value);
+      let k = parseFloat(tempKInput.value);
+      let v = parseFloat(volLInput.value);
+      if (isNaN(c) || isNaN(k) || isNaN(v)) return;
+      const row = `<tr><td>${c.toFixed(1)}</td><td>${k.toFixed(2)}</td><td>${v.toFixed(2)}</td></tr>`;
+      dataTableBody.insertAdjacentHTML('beforeend', row);
+      chart.data.datasets[0].data.push({x: k, y: v});
+      chart.update();
+      tempCInput.value = ''; tempKInput.value = ''; volLInput.value = '';
+    }
+
+    function clearData() {
+      dataTableBody.innerHTML = '';
+      chart.data.datasets[0].data = [];
+      chart.update();
+    }
+
+    // ===== Simulador (con barras de T y V + llama) =====
+    const canvas = document.getElementById('cylinderCanvas');
+    const ctx = canvas.getContext('2d');
+    const energyInput = document.getElementById('energyInput');
+
+    // Mantengo tu relación lineal actual para V(T). Si quieres volver a la forma proporcional a Kelvin, me dices y lo cambio.
+    function volumeFromTempC(tempC) {
+      return 1 + (tempC - 20) * 0.02; // misma fórmula que ya usabas en esta versión
+    }
+    window.volumeFromTempC = volumeFromTempC;
+
+    function getSimTempC() {
+      return 20 + (parseFloat(energyInput.value || '0') / 100) * 80; // 20 → 100 °C
+    }
+    window.getSimTempC = getSimTempC;
+
+    function drawCylinder(tempC) {
+      // Geometría base del cilindro
+      const cyl = { x: 160, y: 50, w: 140, h: 360 };
+      const inner = { x: cyl.x + 6, y: cyl.y + 6, w: cyl.w - 12, h: cyl.h - 12 };
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Pared externa
+      ctx.fillStyle = '#e0e0e0';
+      ctx.fillRect(cyl.x, cyl.y, cyl.w, cyl.h);
+      // Cavidad interna
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(inner.x, inner.y, inner.w, inner.h);
+
+      // Mapeo 20..100 °C → altura visible del gas
+      const f = (tempC - 20) / 80; // 0..1
+      const maxHeight = inner.h - 24;
+      const minHeight = Math.max(18, maxHeight * 0.18);
+      const height = Math.max(minHeight, Math.min(maxHeight, minHeight + f * (maxHeight - minHeight)));
+      const gasY = inner.y + inner.h - height;
+
+      // Gas
+      ctx.fillStyle = '#b0e0e6';
+      ctx.fillRect(inner.x, gasY, inner.w, height);
+
+      // Émbolo
+      ctx.fillStyle = '#8c8c8c';
+      ctx.fillRect(inner.x - 6, gasY - 14, inner.w + 12, 14);
+
+      // ===== Barra lateral de volumen (derecha) =====
+      const barY = inner.y;
+      const barH = inner.h;
+      const barVolX = inner.x + inner.w + 70;
+      ctx.strokeStyle = '#222';
+      ctx.strokeRect(barVolX, barY, 16, barH);
+      ctx.fillStyle = '#b0e0e6';
+      const vol = volumeFromTempC(tempC);
+      const volMax = volumeFromTempC(100);
+      const fillVolH = (vol / volMax) * barH;
+      ctx.fillRect(barVolX, barY + barH - fillVolH, 16, fillVolH);
+      ctx.fillStyle = '#222';
+      ctx.font = '10px Arial';
+      ctx.fillText(`${vol.toFixed(2)} L`, barVolX - 2, barY - 4);
+
+      // ===== Barra lateral de temperatura (izquierda) =====
+      const barTempX = inner.x - 50;
+      ctx.strokeStyle = '#222';
+      ctx.strokeRect(barTempX, barY, 16, barH);
+      ctx.fillStyle = '#ff6666';
+      const fillTH = ((tempC - 20) / 80) * barH;
+      ctx.fillRect(barTempX, barY + barH - fillTH, 16, fillTH);
+      ctx.fillStyle = '#222';
+      ctx.font = '10px Arial';
+      ctx.fillText(`${tempC.toFixed(0)} °C`, barTempX - 6, barY - 4);
+
+      // ===== Llama debajo del cilindro (no atraviesa) =====
+      const innerBottom = inner.y + inner.h;
+      const gap = 34;                // espacio entre cilindro y llama (ajustado al tamaño reducido)
+      const baseY = innerBottom + gap;
+      const rawH = 0.75 * (30 + (tempC - 20) * 0.45); // crecimiento con T
+      const maxH = Math.max(8, gap - 6);              // límite para no cruzar
+      const H = Math.max(8, Math.min(rawH, maxH));
+
+      const cx = inner.x + inner.w / 2;
+      const grd = ctx.createLinearGradient(0, baseY - H, 0, baseY);
+      grd.addColorStop(0, '#ffcc33');
+      grd.addColorStop(0.6, '#ff8c1a');
+      grd.addColorStop(1, '#ff4d4d');
+      ctx.fillStyle = grd;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, baseY);
+      ctx.quadraticCurveTo(cx - 22, baseY - H * 0.45, cx, baseY - H);
+      ctx.quadraticCurveTo(cx + 22, baseY - H * 0.45, cx, baseY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Base del quemador
+      ctx.fillStyle = '#444';
+      ctx.fillRect(cx - 16, baseY + 2, 32, 6);
+    }
+
+    function redraw() { drawCylinder(getSimTempC()); }
+    energyInput.addEventListener('input', redraw);
+    redraw();
+
+    // ===== Conexión con el panel de datos =====
+    function captureFromSimulator() {
+      const tempC = getSimTempC();
+      const k = tempC + 273.15;
+      const v = volumeFromTempC(tempC);
+      tempCInput.value = tempC.toFixed(2);
+      tempKInput.value = k.toFixed(2);
+      volLInput.value = v.toFixed(2);
+      addData();
+    }
+    // Exponer a global para el botón
+    window.captureFromSimulator = captureFromSimulator;
+  </script>
+</body>
+</html>

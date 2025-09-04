@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portada — Reto Bosco Skills 2025</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root{
+      --bg:#f4f4f4; --ink:#111; --muted:#666; --panel:#ffffff; --edge:#dcdcdc; --accent:#1d4ed8;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:min(980px,96vw);background:var(--panel);border:1px solid var(--edge);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:28px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--edge);padding-bottom:12px;margin-bottom:20px}
+    .logos-left img{height:70px}
+    .logos-right img{height:82px}
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:20px;align-items:center}
+    @media (max-width:860px){.hero{grid-template-columns:1fr}}
+    h1{margin:0 0 6px 0;font-size:28px}
+    p.lead{margin:6px 0 14px 0;color:var(--muted);font-size:15px}
+    .cta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+    .btn{background:var(--accent);color:white;border:none;border-radius:10px;padding:10px 16px;font-size:15px;cursor:pointer}
+    .btn:focus{outline:2px solid #93c5fd}
+    .pill{font-size:12px;color:#065f46;background:#d1fae5;border:1px solid #a7f3d0;padding:4px 8px;border-radius:999px}
+    .illustration{display:flex;align-items:center;justify-content:center}
+    .heroimg{width:100%;max-width:430px;height:auto;border-radius:12px;background:#f7f9ff;border:1px solid var(--edge)}
+    footer{margin-top:22px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .tag{background:#e9f0ff;color:#3b82f6;border:1px solid #c7dbff;padding:4px 10px;border-radius:999px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="logos-left">
+          <img src="logosalesiana.png" alt="Fundación Universitaria Salesiana"/>
+        </div>
+        <div class="logos-right">
+          <img src="ESE.png" alt="Entlein Schutzvogel E-ducative"/>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div>
+          <h1>Reto interactivo STEAM: Ciencias naturales</h1>
+          <p class="lead">Bienvenidos estudiantes de la Inspectoría San Pedro Claver a este reto STEAM, en el marco de Bosco Skills 2025. Esperamos que disfruten su participación y que tengan una plácida experiencia de aprendizaje interactivo.</p>
+          <div class="cta">
+            <span class="pill">Duración total: 100 minutos</span>
+          </div>
+        </div>
+        <div class="illustration">
+          <!-- Imagen hero portada -->
+          <img src="portada.png" alt="Ilustración: estudiantes conectando ideas científicas con computador" class="heroimg"/>
+        </div>
+      </div>
+
+      <footer>
+        <span>© 2025 — Entlein Schutzvogel E‑ducative</span>
+        <span class="tag">Bosco Skills 2025 — Hacer reflexivo</span>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    function goToInstrucciones(){
+      try{
+        const btn = window.top && window.top.document && window.top.document.querySelector('.tab[data-src="instrucciones.html"]');
+        if(btn){ btn.click(); return; }
+      }catch(e){}
+      try{ window.top.location.hash = 'instrucciones.html'; }catch(e){}
+    }
+    document.getElementById('startBtn').addEventListener('click', goToInstrucciones);
+  </script>
+</body>
+</html>

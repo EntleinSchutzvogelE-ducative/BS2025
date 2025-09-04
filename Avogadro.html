@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ley de Avogadro — Cámara de Gas (P y T constantes)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    .columns { display: flex; flex-direction: row; justify-content: center; align-items: flex-start; gap: 20px; padding: 10px; }
+    .simulator, .data-panel { background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .simulator { width: 500px; height: 500px; position: relative; }
+    .data-panel { width: 500px; min-height: 500px; }
+    #workArea { position: relative; width: 100%; height: 100%; border: 1px solid #ccc; border-radius: 8px; background: linear-gradient(180deg, #fafafa, #f2f2f2); display: flex; justify-content: center; align-items: center; }
+    canvas { background: #fff; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 5px; text-align: center; }
+    .form-row { margin: 10px 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  </style>
+</head>
+<body>
+  <div class="columns">
+    <!-- Columna izquierda: Simulador Avogadro (V–n a P,T ctes) -->
+    <div class="simulator">
+      <div id="workArea">
+        <canvas id="avogadroCanvas" width="480" height="480"></canvas>
+      </div>
+      <div style="text-align:center; margin-top:10px;">
+        <label for="moles">Cantidad de gas (n, mol):</label>
+        <input type="range" id="moles" min="0.1" max="5" step="0.1" value="1" />
+      </div>
+    </div>
+
+    <!-- Columna derecha: Tabla + Gráfica -->
+    <div class="data-panel">
+      <h3>Registro de datos (Avogadro)</h3>
+      <div class="form-row">
+        <label for="nMol">n (mol):</label>
+        <input type="number" id="nMol" step="0.25" />
+        <label for="volL">V (L):</label>
+        <input type="number" id="volL" step="0.01" />
+        <button id="addBtn">Añadir</button>
+        <!-- <button id="captureBtn">Capturar simulador</button> -->
+        <button id="clearBtn">Borrar</button>
+      </div>
+      <table id="dataTable">
+        <thead>
+          <tr><th>n (mol)</th><th>V (L)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <canvas id="nvChart" width="480" height="300" style="margin-top:10px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart.js (si no carga, el simulador sigue funcionando) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+  (function(){
+    'use strict';
+
+    // ===== Parámetros base =====
+    const K = 22.4; // L/mol
+    const nMin = 0.1, nMax = 5.0;
+    const VMin = K*nMin, VMax = K*nMax;
+
+    // ===== SIMULADOR (canvas) =====
+    const canvas = document.getElementById('avogadroCanvas');
+    const ctx = canvas.getContext('2d');
+    const moles = document.getElementById('moles');
+
+    function getn(){ return parseFloat(moles.value); }
+    function getV(){ return K * getn(); }
+
+    function draw(){
+      const n = getn();
+      const V = getV();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // Cilindro
+      const cyl = { x: 160, y: 40, w: 140, h: 360 };
+      const inner = { x: cyl.x+6, y: cyl.y+6, w: cyl.w-12, h: cyl.h-12 };
+      ctx.fillStyle = '#e0e0e0'; ctx.fillRect(cyl.x, cyl.y, cyl.w, cyl.h);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(inner.x, inner.y, inner.w, inner.h);
+
+      // Altura proporcional a V
+      const fracV = (V - VMin)/(VMax - VMin);
+      const gasH = 30 + fracV*(inner.h-60);
+      const gasY = inner.y + inner.h - gasH;
+
+      ctx.fillStyle = '#b0e0e6';
+      ctx.fillRect(inner.x, gasY, inner.w, gasH);
+      ctx.fillStyle = '#8c8c8c';
+      ctx.fillRect(inner.x-6, gasY-14, inner.w+12, 14);
+
+      // Barras laterales
+      const barY = cyl.y+10;
+      const barH = cyl.h-20;
+      // n
+      const barNx = cyl.x-40;
+      ctx.strokeStyle = '#222'; ctx.strokeRect(barNx, barY, 16, barH);
+      const fillNH = ((n-nMin)/(nMax-nMin))*barH;
+      ctx.fillStyle = '#66bb6a';
+      ctx.fillRect(barNx, barY+barH-fillNH, 16, fillNH);
+      ctx.fillStyle = '#222'; ctx.font='10px Arial';
+      ctx.fillText(`${n.toFixed(1)} mol`, barNx-6, barY-4);
+      // V
+      const barVx = cyl.x+cyl.w+24;
+      ctx.strokeStyle = '#222'; ctx.strokeRect(barVx, barY, 16, barH);
+      const fillVH = ((V-VMin)/(VMax-VMin))*barH;
+      ctx.fillStyle = '#4fc3f7';
+      ctx.fillRect(barVx, barY+barH-fillVH, 16, fillVH);
+      ctx.fillStyle = '#222'; ctx.font='10px Arial';
+      ctx.fillText(`${V.toFixed(1)} L`, barVx-2, barY-4);
+
+      ctx.fillStyle = '#222'; ctx.font='12px Arial';
+      ctx.fillText('P = const, T = const', cyl.x+8, cyl.y-14);
+    }
+
+    moles.addEventListener('input', draw);
+
+    // ===== Panel derecho =====
+    const nMol = document.getElementById('nMol');
+    const volL = document.getElementById('volL');
+    const addBtn = document.getElementById('addBtn');
+    const captureBtn = document.getElementById('captureBtn'); // puede ser null (está comentado)
+    const clearBtn = document.getElementById('clearBtn');
+    const tbody = document.querySelector('#dataTable tbody');
+
+    // Dibujo inicial del simulador (asegura que se vea el canvas pase lo que pase)
+    draw();
+
+    // Inicialización SEGURA del gráfico (no bloquea si falla Chart.js)
+    let chart = null;
+    (function initChartSafely(){
+      try {
+        if (!window.Chart) throw new Error('Chart.js no disponible');
+        const ctxChart = document.getElementById('nvChart').getContext('2d');
+        chart = new Chart(ctxChart, {
+          type:'scatter',
+          data:{datasets:[{label:'V vs n',data:[],pointBackgroundColor:'#1976d2',borderColor:'#1976d2',showLine:false,pointRadius:4,tension:0}]},
+          options:{responsive:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'n (mol)'}},y:{title:{display:true,text:'V (L)'}}}}
+        });
+      } catch(e) {
+        console.warn('Gráfica deshabilitada:', e.message);
+      }
+    })();
+
+    function addRow(n,V){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${n.toFixed(1)}</td><td>${V.toFixed(2)}</td>`;
+      tbody.appendChild(tr);
+      if (chart){
+        chart.data.datasets[0].data.push({x:n,y:V});
+        chart.update();
+      }
+    }
+
+    addBtn.addEventListener('click',()=>{
+      const n=parseFloat(nMol.value);
+      const V=parseFloat(volL.value);
+      if(isNaN(n)||isNaN(V)) return;
+      addRow(n,V);
+      nMol.value=''; volL.value='';
+    });
+
+    // Solo conectar si el botón existe (por si lo comentas/ocultas)
+    if (captureBtn){
+      captureBtn.addEventListener('click',()=>{
+        const n=getn();
+        const V=getV();
+        nMol.value=n.toFixed(1);
+        volL.value=V.toFixed(2);
+        addRow(n,V);
+      });
+    }
+
+    clearBtn.addEventListener('click',()=>{
+      tbody.innerHTML='';
+      if (chart){
+        chart.data.datasets[0].data=[];
+        chart.update();
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

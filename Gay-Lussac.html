@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ley de Gay-Lussac — Cilindro-Émbolo (Isocórico)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    .columns { display: flex; flex-direction: row; justify-content: center; align-items: flex-start; gap: 20px; padding: 10px; }
+    .simulator, .data-panel { background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .simulator { width: 500px; height: 500px; position: relative; }
+    .data-panel { width: 500px; min-height: 500px; }
+    #workArea { position: relative; width: 100%; height: 100%; background: #fff; display: flex; justify-content: center; align-items: center; }
+    canvas { background: #fff; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 5px; text-align: center; }
+    .form-row { margin: 10px 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  </style>
+</head>
+<body>
+  <div class="columns">
+    <!-- Columna izquierda: Simulador Gay-Lussac (P–T, V cte) -->
+    <div class="simulator">
+      <div id="workArea">
+        <canvas id="gayCanvas" width="480" height="480"></canvas>
+      </div>
+      <div style="text-align:center; margin-top:10px;">
+        <label for="energy">Energía suministrada:</label>
+        <!-- 0 → 20 °C ; 100 → 100 °C -->
+        <input type="range" id="energy" min="0" max="100" value="0" />
+      </div>
+    </div>
+
+    <!-- Columna derecha: Tabla + Gráfica -->
+    <div class="data-panel">
+      <h3>Registro de datos (Isocórico)</h3>
+      <div class="form-row">
+        <label for="tC">T (°C):</label>
+        <input type="number" id="tC" step="0.1" />
+        <label for="tK">T (K):</label>
+        <input type="number" id="tK" readonly />
+        <label for="p">P (mmHg):</label>
+        <input type="number" id="p" step="1" />
+        <button id="addBtn">Añadir</button>
+        <!-- <button id="captureBtn">Capturar simulador</button> -->
+        <button id="clearBtn">Borrar</button>
+      </div>
+      <table id="dataTable">
+        <thead>
+          <tr><th>T (°C)</th><th>T (K)</th><th>P (mmHg)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <canvas id="ptChart" width="480" height="300" style="margin-top:10px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+  (function(){
+    'use strict';
+
+    // ===== Parámetros base (Gay-Lussac) =====
+    const K0 = 273.15;      // °C → K
+    const T0C = 20;         // °C de referencia
+    const TminC = 20;       // rango pedagógico
+    const TmaxC = 100;
+    const T0K = T0C + K0;   // 293.15 K
+    const P0 = 760;         // mmHg a T0K (1 atm)
+
+    // ===== SIMULADOR (canvas) =====
+    const canvas = document.getElementById('gayCanvas');
+    const ctx = canvas.getContext('2d');
+    const energy = document.getElementById('energy');
+
+    function tempFromEnergy(){
+      // 0..100 → 20..100 °C
+      const f = Math.max(0, Math.min(1, parseFloat(energy.value||'0')/100));
+      return TminC + f*(TmaxC - TminC);
+    }
+    function pressureFromTempC(Tc){
+      const Tk = Tc + K0;
+      return P0 * (Tk / T0K); // P ∝ T a V cte
+    }
+
+    // Exponer a ventana para el panel de datos (si decides usar Capturar)
+    window.gay_getT_C = () => tempFromEnergy();
+    window.gay_getT_K = () => tempFromEnergy() + K0;
+    window.gay_getP = () => pressureFromTempC(tempFromEnergy());
+
+    function drawPT(){
+      const Tc = tempFromEnergy();
+      const Tk = Tc + K0;
+      const P  = pressureFromTempC(Tc);
+
+      // Geometría del cilindro (volumen constante → pistón fijo)
+      const cyl = { x: 160, y: 50, w: 140, h: 360 };
+      const inner = { x: cyl.x + 6, y: cyl.y + 6, w: cyl.w - 12, h: cyl.h - 12 };
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // Pared externa y cavidad
+      ctx.fillStyle = '#e0e0e0'; ctx.fillRect(cyl.x, cyl.y, cyl.w, cyl.h);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(inner.x, inner.y, inner.w, inner.h);
+
+      // Gas con altura fija (volumen constante)
+      const height = Math.round(inner.h * 0.60);
+      const gasY = inner.y + inner.h - height;
+      ctx.fillStyle = '#b0e0e6';
+      ctx.fillRect(inner.x, gasY, inner.w, height);
+
+      // Émbolo fijo
+      ctx.fillStyle = '#8c8c8c';
+      ctx.fillRect(inner.x - 6, gasY - 14, inner.w + 12, 14);
+
+      // ===== Barra lateral de TEMPERATURA (izquierda) — AHORA EN °C =====
+      const barY = inner.y;
+      const barH = inner.h;
+      const barTx = inner.x - 50;
+      ctx.strokeStyle = '#222';
+      ctx.strokeRect(barTx, barY, 16, barH);
+      ctx.fillStyle = '#ff6666';
+      const fillTH = ((Tc - TminC) / (TmaxC - TminC)) * barH;
+      ctx.fillRect(barTx, barY + barH - fillTH, 16, Math.max(0, fillTH));
+      ctx.fillStyle = '#222';
+      ctx.font = '10px Arial';
+      ctx.fillText(`${Tc.toFixed(1)} °C`, barTx - 10, barY - 4); // ← °C en el rótulo
+
+      // ===== Barra lateral de PRESIÓN (derecha) — mmHg =====
+      const barPx = inner.x + inner.w + 70;
+      ctx.strokeStyle = '#222';
+      ctx.strokeRect(barPx, barY, 16, barH);
+      ctx.fillStyle = '#ff9933';
+      const Pmax = pressureFromTempC(TmaxC);
+      const fillPH = (P / Pmax) * barH;
+      ctx.fillRect(barPx, barY + barH - fillPH, 16, Math.max(0, fillPH));
+      ctx.fillStyle = '#222';
+      ctx.font = '10px Arial';
+      ctx.fillText(`${P.toFixed(0)} mmHg`, barPx - 22, barY - 4);
+
+      // ===== Llama (energía suministrada) — no atraviesa el cilindro =====
+      const innerBottom = inner.y + inner.h;
+      const gap = 34;
+      const baseY = innerBottom + gap;
+      const rawH = 0.75 * (30 + (Tc - TminC) * 0.45);
+      const maxH = Math.max(8, gap - 6);
+      const H = Math.max(8, Math.min(rawH, maxH));
+
+      const cx = inner.x + inner.w / 2;
+      const grd = ctx.createLinearGradient(0, baseY - H, 0, baseY);
+      grd.addColorStop(0, '#ffcc33');
+      grd.addColorStop(0.6, '#ff8c1a');
+      grd.addColorStop(1, '#ff4d4d');
+      ctx.fillStyle = grd;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, baseY);
+      ctx.quadraticCurveTo(cx - 22, baseY - H * 0.45, cx, baseY - H);
+      ctx.quadraticCurveTo(cx + 22, baseY - H * 0.45, cx, baseY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Base del quemador
+      ctx.fillStyle = '#444';
+      ctx.fillRect(cx - 16, baseY + 2, 32, 6);
+
+      // Etiquetas
+      ctx.fillStyle = '#222';
+      ctx.font = '12px Arial';
+      ctx.fillText('T (°C)', barTx - 2, barY - 18);  // ← aclara unidades
+      ctx.fillText('P (mmHg)', barPx - 8, barY - 18);
+    }
+
+    function onInput(){ drawPT(); }
+    energy.addEventListener('input', onInput);
+    drawPT();
+
+    // ====== PANEL DE DATOS ======
+    const tC = document.getElementById('tC');
+    const tK = document.getElementById('tK');
+    const p  = document.getElementById('p');
+    const addBtn = document.getElementById('addBtn');
+    const capBtn = document.getElementById('captureBtn'); // puede ser null (está comentado)
+    const clrBtn = document.getElementById('clearBtn');
+    const tbody = document.querySelector('#dataTable tbody');
+
+    // Gráfica P(mmHg) vs T(K) — scatter (solo puntos)
+    const chart = new Chart(document.getElementById('ptChart').getContext('2d'), {
+      type: 'scatter',
+      data: { datasets: [{ label: 'P (mmHg) vs T (K)', data: [], showLine: false, pointRadius: 4 }] },
+      options: { responsive:false, scales: { x: { title:{display:true, text:'T (K)'} }, y:{ title:{display:true, text:'P (mmHg)'} } } }
+    });
+
+    function addRow(Tc, Tk, P){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${Tc.toFixed(1)}</td><td>${Tk.toFixed(2)}</td><td>${P.toFixed(0)}</td>`;
+      tbody.appendChild(tr);
+    }
+    function addPoint(Tc, Tk, P){
+      addRow(Tc, Tk, P);
+      chart.data.datasets[0].data.push({ x: Tk, y: P });
+      chart.update();
+    }
+
+    // Conversión °C → K en el input
+    tC.addEventListener('input', () => {
+      const Tc = parseFloat(tC.value);
+      if (!Number.isFinite(Tc)){ tK.value=''; return; }
+      tK.value = (Tc + K0).toFixed(2);
+    });
+
+    addBtn.addEventListener('click', () => {
+      const Tc = parseFloat(tC.value); const Tk = parseFloat(tK.value); const P = parseFloat(p.value);
+      if (!Number.isFinite(Tc) || !Number.isFinite(Tk) || !Number.isFinite(P)) return alert('Ingresa T (°C), T (K) y P (mmHg) válidos.');
+      addPoint(Tc, Tk, P);
+      tC.value=''; tK.value=''; p.value='';
+    });
+
+    // Solo conectar si el botón existe (por si lo dejas oculto/comentado)
+    if (capBtn) {
+      capBtn.addEventListener('click', () => {
+        const Tc = window.gay_getT_C();
+        const Tk = Tc + K0;
+        const P  = window.gay_getP();
+        tC.value = Tc.toFixed(1);
+        tK.value = Tk.toFixed(2);
+        p.value  = P.toFixed(0);
+        addPoint(Tc, Tk, P);
+      });
+    }
+
+    clrBtn.addEventListener('click', () => {
+      tbody.innerHTML = '';
+      chart.data.datasets[0].data = [];
+      chart.update();
+    });
+
+    // ===== Auto-tests mínimos =====
+    (function tests(){
+      function approx(a,b,eps=1e-6){ return Math.abs(a-b) <= eps; }
+      console.assert(approx(pressureFromTempC(20), 760), 'P(20°C)=760mmHg');
+      console.assert(approx(Math.round(pressureFromTempC(100)), Math.round(760*( (100+K0)/(20+K0) ))), 'Proporcionalidad P∝T OK');
+    })();
+  })();
+  </script>
+</body>
+</html>

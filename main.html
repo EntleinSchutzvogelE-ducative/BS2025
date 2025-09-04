@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reto de Gases — Navegación secuencial</title>
+  <style>
+    :root{ --bg:#f4f4f4; --ink:#111; --muted:#666; --panel:#ffffff; --edge:#dcdcdc; --accent:#1d4ed8; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    header{background:var(--panel);border-bottom:1px solid var(--edge);
+            padding:10px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+    .brand h1{font-size:18px;margin:0}
+    .hint{font-size:12px;color:var(--muted)}
+    .wrap{padding:12px}
+    .frameWrap{background:var(--panel);border:1px solid var(--edge);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    iframe{width:100%;height:84vh;border:0;border-radius:10px}
+    .controls{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+    .progress{font-size:12px;color:var(--muted)}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:14px;cursor:pointer}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><h1>Reto de Gases — Navegación</h1></div>
+    <div class="hint">Avanza con el botón «Siguiente»</div>
+  </header>
+
+  <div class="wrap">
+    <div class="frameWrap">
+      <iframe id="viewer" src="about:blank" title="Etapa"></iframe>
+    </div>
+    <div class="controls">
+      <span class="progress" id="progress">Paso 1 de 9</span>
+      <button class="btn" id="nextBtn">Siguiente</button>
+    </div>
+  </div>
+
+  <script>
+    // Secuencia fija de etapas (se cierra con Despedida)
+    const sequence = [
+      'Portada.html',
+      'Instrucciones.html',
+      'CaidaLibre.html',
+      'Charles.html',
+      'Boyle.html',
+      'Gay-Lussac.html',
+      'Avogadro.html',
+      'Cuestionario.html',
+      'Despedida.html'
+    ];
+
+    const viewer   = document.getElementById('viewer');
+    const nextBtn  = document.getElementById('nextBtn');
+    const progress = document.getElementById('progress');
+
+    let idx = 0;
+
+    function labelFor(i){
+      if (i === sequence.length - 3) return 'Ir al Cuestionario';
+      if (i === sequence.length - 2) return 'Ir al cierre';
+      if (i >= sequence.length - 1) return 'Finalizado';
+      return 'Siguiente';
+    }
+
+    function updateUI(){
+      progress.textContent = `Paso ${idx+1} de ${sequence.length}`;
+      nextBtn.textContent = labelFor(idx);
+      nextBtn.style.display = (idx >= sequence.length-1) ? 'none' : 'inline-flex';
+    }
+
+    function load(i){
+      idx = Math.max(0, Math.min(i, sequence.length-1));
+      const target = sequence[idx];
+      viewer.src = target;
+      updateUI();
+      // reflejar etapa actual en el hash (permite links directos)
+      try { location.hash = encodeURIComponent(target); } catch(e) {}
+    }
+
+    function next(){ if (idx < sequence.length-1) load(idx+1); }
+
+    function goTo(target){
+      const i = sequence.indexOf(target);
+      if (i >= 0) load(i);
+    }
+
+    // Botón siguiente
+    nextBtn.addEventListener('click', next);
+
+    // Apertura inicial: permitir main.html#Charles.html
+    if (location.hash) {
+      const target = decodeURIComponent(location.hash.slice(1));
+      const start  = sequence.indexOf(target);
+      load(start >= 0 ? start : 0);
+    } else {
+      load(0);
+    }
+
+    // NUEVO: si cambia el hash (por ejemplo, desde un iframe), navegamos
+    window.addEventListener('hashchange', ()=>{
+      const target = decodeURIComponent(location.hash.slice(1));
+      goTo(target);
+    });
+
+    // NUEVO: permitir mensajes desde iframes: 'next' o 'goto:Archivo.html'
+    window.addEventListener('message', (ev)=>{
+      if (!ev || !ev.data) return;
+      if (ev.data === 'next') return next();
+      if (typeof ev.data === 'string' && ev.data.startsWith('goto:')) {
+        const target = ev.data.slice(5);
+        return goTo(target);
+      }
+    });
+  </script>
+</body>
+</html>

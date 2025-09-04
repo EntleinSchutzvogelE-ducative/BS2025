@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cuestionario — Reto Bosco Skills 2025</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root{ --bg:#f4f4f4; --ink:#111; --muted:#666; --panel:#ffffff; --edge:#dcdcdc; --accent:#1d4ed8; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:min(980px,96vw);background:var(--panel);border:1px solid var(--edge);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:28px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--edge);padding-bottom:12px;margin-bottom:18px}
+    .logos-left img{height:46px}
+    .logos-right img{height:58px}
+    h1{margin:0 0 6px 0;font-size:26px}
+    p.lead{margin:0 0 12px 0;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media (max-width:860px){.grid{grid-template-columns:1fr}}
+    .panel{border:1px solid var(--edge);border-radius:12px;padding:16px}
+    .panel h3{margin:0 0 10px 0;font-size:18px}
+    fieldset{border:1px dashed var(--edge);border-radius:10px;padding:10px;margin:10px 0}
+    legend{font-size:12px;color:var(--muted)}
+    label{display:block;margin:6px 0}
+    input[type="text"], input[type="number"], textarea{width:100%;padding:8px;border:1px solid var(--edge);border-radius:8px}
+    textarea{min-height:72px;resize:vertical}
+    .cta{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:16px}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:14px;cursor:pointer}
+    .ghost{background:#eef2ff;color:#1d4ed8;border:1px solid #c7d2fe}
+    .note{font-size:12px;color:var(--muted)}
+    .graph-space{border:1px dashed var(--edge);border-radius:10px;padding:12px;text-align:center;margin:10px 0}
+    .graph-space p{font-size:13px;color:var(--muted);margin:0 0 8px 0}
+    .graph-space input[type="file"]{display:block;margin:6px auto}
+    .graph-space img{max-width:100%;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="logos-left"><img src="logosalesiana.png" alt="Fundación Universitaria Salesiana"></div>
+        <div class="logos-right"><img src="ESE.png" alt="Entlein Schutzvogel E-ducative"></div>
+      </div>
+
+      <h1>Cuestionario</h1>
+      <p class="lead">Responde con base en los <strong>8 datos</strong> que registraste en cada simulador y en la observación de los <strong>gráficos de puntos</strong>. No hay líneas uniendo puntos: analiza la <em>tendencia</em>. Adjunta tus 4 capturas de las gráficas en cada sección.</p>
+
+      <div class="grid">
+        <!-- Columna 1 -->
+        <div class="panel">
+          <h3>1) Relación Volumen temperatura</h3>
+          <fieldset>
+            <legend>Tipo de relación</legend>
+            <label><input type="radio" name="c1" value="directa"> Directa</label>
+            <label><input type="radio" name="c1" value="inversa"> Inversa</label>
+            <label><input type="radio" name="c1" value="ninguna"> Ninguna de las anteriores</label>
+          </fieldset>
+          <label>Explica brevemente tu elección</label>
+          <textarea name="c1_exp"></textarea>
+          <label>¿Crees que la relación presión volumen es la misma para los estados líquido y sólido? Explica tu respuesta.</label>
+          <textarea name="c1_dup"></textarea>
+          <label>Menciona y explica un dispositivo real donde se aplique la relación Volumen Temperatura en la vida real.</label>
+          <textarea name="c1_dup2"></textarea>
+          <div class="graph-space">
+            <p>Adjunta aquí la captura de la gráfica (Volumen vs Temperatura)</p>
+            <input type="file" accept="image/*" onchange="previewFile(this)">
+            <img alt="Vista previa V–T" />
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>2) Relación Presión Volumen</h3>
+          <fieldset>
+            <legend>Tipo de relación</legend>
+            <label><input type="radio" name="b1" value="directa"> Directa</label>
+            <label><input type="radio" name="b1" value="inversa"> Inversa</label>
+            <label><input type="radio" name="b1" value="ninguna"> Ninguna de las anteriores</label>
+          </fieldset>
+          <label>¿Qué transformación harías para poder obtener una línea recta a partir de tus datos?</label>
+          <label><input type="radio" name="b2" value="P vs 1/V"> P vs 1/V</label>
+          <label><input type="radio" name="b2" value="logP vs logV"> log(P) vs log(V)</label>
+          <label><input type="radio" name="b2" value="P vs V"> P vs V (ya es lineal)</label>
+          <label>Explica por qué.</label>
+          <textarea name="b_exp"></textarea>
+          <label>Menciona y explica un dispositivo real donde se aplique la relación Presión Volumen.</label>
+          <textarea name="b_dev"></textarea>
+          <div class="graph-space">
+            <p>Adjunta aquí la captura de la gráfica (Presión vs Volumen)</p>
+            <input type="file" accept="image/*" onchange="previewFile(this)">
+            <img alt="Vista previa P–V" />
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>3) Relación Temperatura presión</h3>
+          <fieldset>
+            <legend>Tipo de relación</legend>
+            <label><input type="radio" name="gl1" value="directa"> Directa</label>
+            <label><input type="radio" name="gl1" value="inversa"> Inversa</label>
+            <label><input type="radio" name="gl1" value="ninguna"> Ninguna de las anteriores</label>
+          </fieldset>
+          <label>Si aumentas la magnitud de la temperatura expresada en grados Celsius al doble ¿Qué esperas que le ocurra a la presión? Justifica.</label>
+          <textarea name="gl_exp"></textarea>
+          <label>Menciona y explica un dispositivo real donde se aplique la relación Presión Temperatura.</label>
+          <textarea name="gl_dev"></textarea>
+          <div class="graph-space">
+            <p>Adjunta aquí la captura de la gráfica (Presión vs Temperatura)</p>
+            <input type="file" accept="image/*" onchange="previewFile(this)">
+            <img alt="Vista previa P–T" />
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>4) Relación cantidad de materia Volumen</h3>
+          <fieldset>
+            <legend>Tipo de relación</legend>
+            <label><input type="radio" name="a1" value="directa"> Directa</label>
+            <label><input type="radio" name="a1" value="inversa"> Inversa</label>
+            <label><input type="radio" name="a1" value="ninguna"> Ninguna de las anteriores</label>
+          </fieldset>
+          <label>¿Crees que la relación cantidad de materia volumen será la misma si mezclas dos gases A y B? Explica tu respuesta</label>
+          <textarea name="a_mix"></textarea>
+          <label>Menciona y explica un dispositivo real que cumpla con la relación Cantidad de materia volumen que observaste en la simulación.</label>
+          <textarea name="a_exp"></textarea>
+          <div class="graph-space">
+            <p>Adjunta aquí la captura de la gráfica (Volumen vs Cantidad de materia)</p>
+            <input type="file" accept="image/*" onchange="previewFile(this)">
+            <img alt="Vista previa V–n" />
+          </div>
+        </div>
+
+      </div>
+
+      <div class="cta">
+        <button class="btn ghost" id="printBtn">Imprimir / Guardar en PDF</button>
+        <button class="btn" id="goNext">Siguiente (Conclusiones)</button>
+      </div>
+      <p class="note">Tus respuestas quedan en pantalla. Si deseas conservarlas, usa “Imprimir / Guardar en PDF”. Las imágenes cargadas no se guardan al recargar o cerrar la página.</p>
+    </div>
+  </div>
+
+  <script>
+    // Guardado simple en PDF (uso del diálogo del navegador)
+    document.getElementById('printBtn').addEventListener('click', ()=>{ window.print(); });
+
+    // Avanzar al siguiente paso en el main secuencial
+    document.getElementById('goNext').addEventListener('click', ()=>{
+      try { window.top.postMessage('next', '*'); } catch(e){}
+      try { window.top.location.hash = 'conclusiones.html'; } catch(e){}
+    });
+
+    // Previsualización local de imágenes (no persiste tras recargar)
+    function previewFile(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = input.nextElementSibling;
+        if (img && img.tagName === 'IMG') img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    window.previewFile = previewFile; // exponer para los onchange del HTML
+  </script>
+</body>
+</html>

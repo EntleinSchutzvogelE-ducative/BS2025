@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ley de Boyle — Cilindro-Émbolo (Isotérmico)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    .columns { display: flex; flex-direction: row; justify-content: center; align-items: flex-start; gap: 20px; padding: 10px; }
+    .simulator, .data-panel { background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .simulator { width: 500px; height: 500px; position: relative; }
+    .data-panel { width: 500px; min-height: 500px; }
+    #workArea { position: relative; width: 100%; height: 100%; background: #fff; display: flex; justify-content: center; align-items: center; }
+    canvas { background: #fff; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 5px; text-align: center; }
+    .form-row { margin: 10px 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  </style>
+</head>
+<body>
+  <div class="columns">
+    <!-- Columna izquierda: Simulador Boyle (P–V) -->
+    <div class="simulator">
+      <div id="workArea">
+        <canvas id="boyleCanvas" width="480" height="480"></canvas>
+      </div>
+      <div style="text-align:center; margin-top:10px;">
+        <label for="compression">Compresión:</label>
+        <!-- 0 = expansión máxima (V = 2.0 L), 100 = compresión máxima (V = 0.1 L) -->
+        <input type="range" id="compression" min="0" max="100" value="0" />
+      </div>
+    </div>
+
+    <!-- Columna derecha: Tabla + Gráfica -->
+    <div class="data-panel">
+      <h3>Registro de datos (Isotérmico)</h3>
+      <div class="form-row">
+        <label for="volL">V (L):</label>
+        <input type="number" id="volL" step="0.01" />
+        <label for="press">P (mmHg):</label>
+        <input type="number" id="press" step="1" />
+        <button id="addBtn">Añadir</button>
+     <!--    <button id="captureBtn">Capturar simulador</button> -->
+        <button id="clearBtn">Borrar</button>
+      </div>
+      <table id="dataTable">
+        <thead>
+          <tr><th>V (L)</th><th>P (mmHg)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <canvas id="pvChart" width="480" height="300" style="margin-top:10px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+  (function(){
+    'use strict';
+    // ===== Parámetros físicos base (isotérmico) =====
+    const P0 = 760;     // mmHg (1 atm)
+    const V0 = 1.00;    // L referencia
+    const Vmin = 0.10;  // L — compresión máxima
+    const Vmax = 2.00;  // L — expansión máxima
+
+    // ===== SIMULADOR (canvas) =====
+    const canvas = document.getElementById('boyleCanvas');
+    const ctx = canvas.getContext('2d');
+    const compression = document.getElementById('compression');
+
+    // mapea slider (0..100) → volumen (Vmax..Vmin) para que "más compresión" → menor volumen
+    function volumeFromCompression(c){
+      const f = Math.max(0, Math.min(1, c/100)); // 0..1
+      return Vmax - f*(Vmax - Vmin); // 0 → Vmax, 1 → Vmin
+    }
+    function pressureFromVolume(V){
+      return P0 * (V0 / V); // P * V = constante
+    }
+
+    // Exponer para panel de datos
+    window.boyle_getV = () => volumeFromCompression(parseFloat(compression.value||'0'));
+    window.boyle_getP = () => pressureFromVolume(window.boyle_getV());
+
+    function drawPV(){
+      const V = window.boyle_getV();
+      const P = pressureFromVolume(V);
+
+      // Geometría cilindro
+      const cyl = { x: 160, y: 40, w: 140, h: 360 };
+      const inner = { x: cyl.x + 6, y: cyl.y + 6, w: cyl.w - 12, h: cyl.h - 12 };
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // Pared externa y cavidad
+      ctx.fillStyle = '#e0e0e0'; ctx.fillRect(cyl.x, cyl.y, cyl.w, cyl.h);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(inner.x, inner.y, inner.w, inner.h);
+
+      // Altura del gas mapeada a V en [Vmin, Vmax]
+      const maxHeight = inner.h - 24;
+      const minHeight = Math.max(18, maxHeight * 0.18);
+      const fV = (V - Vmin) / (Vmax - Vmin); // 0..1
+      const height = Math.max(minHeight, Math.min(maxHeight, minHeight + fV * (maxHeight - minHeight)));
+      const gasY = inner.y + inner.h - height;
+
+      // Gas
+      ctx.fillStyle = '#b0e0e6';
+      ctx.fillRect(inner.x, gasY, inner.w, height);
+
+      // Émbolo
+      ctx.fillStyle = '#8c8c8c';
+      ctx.fillRect(inner.x - 6, gasY - 14, inner.w + 12, 14);
+
+      // ===== Barra de PRESIÓN (izquierda) — mmHg =====
+      const barY = inner.y;
+      const barH = inner.h;
+      const barPx = inner.x - 50;
+      const Pmax = pressureFromVolume(Vmin); // 7600 mmHg aprox a 0.1L
+      ctx.strokeStyle = '#222';
+      ctx.strokeRect(barPx, barY, 16, barH);
+      ctx.fillStyle = '#ff6666';
+      const fillPH = (P / Pmax) * barH;
+      ctx.fillRect(barPx, barY + barH - fillPH, 16, fillPH);
+      ctx.fillStyle = '#222';
+      ctx.font = '10px Arial';
+      ctx.fillText(`${P.toFixed(0)} mmHg`, barPx - 18, barY - 4);
+
+      // ===== Barra de VOLUMEN (derecha) — L =====
+      const barVx = inner.x + inner.w + 70;
+      ctx.strokeStyle = '#222';
+      ctx.strokeRect(barVx, barY, 16, barH);
+      ctx.fillStyle = '#b0e0e6';
+      const fillVH = ((V - Vmin) / (Vmax - Vmin)) * barH; // relativo al rango Vmin..Vmax
+      ctx.fillRect(barVx, barY + barH - fillVH, 16, fillVH);
+      ctx.fillStyle = '#222';
+      ctx.font = '10px Arial';
+      ctx.fillText(`${V.toFixed(2)} L`, barVx - 2, barY - 4);
+
+      // ===== Indicador mecánico debajo (peso/compresión) =====
+      const baseY = inner.y + inner.h + 28; // base visual
+      const H = 12 + (parseFloat(compression.value||'0')/100)*16; // mayor compresión ⇒ indicador más alto
+      const cx = inner.x + inner.w/2;
+      ctx.fillStyle = '#777';
+      ctx.fillRect(cx - 20, baseY - H, 40, H);
+      ctx.fillStyle = '#444';
+      ctx.fillRect(cx - 26, baseY + 2, 52, 6);
+
+      // Etiquetas
+      ctx.fillStyle = '#222';
+      ctx.font = '12px Arial';
+      ctx.fillText('P', barPx + 4, barY - 16);
+      ctx.fillText('V', barVx + 4, barY - 16);
+    }
+
+    function onInput(){ drawPV(); }
+    compression.addEventListener('input', onInput);
+    drawPV();
+
+    // ====== PANEL DE DATOS ======
+    const volL = document.getElementById('volL');
+    const press = document.getElementById('press');
+    const addBtn = document.getElementById('addBtn');
+    const capBtn = document.getElementById('captureBtn');
+    const clrBtn = document.getElementById('clearBtn');
+    const tbody = document.querySelector('#dataTable tbody');
+
+    // Gráfica P(mmHg) vs V(L) — puntos (scatter)
+    const chart = new Chart(document.getElementById('pvChart').getContext('2d'), {
+      type: 'scatter',
+      data: { datasets: [{ label: 'P (mmHg) vs V (L)', data: [], showLine: false, pointRadius: 4 }] },
+      options: { responsive:false, scales: { x: { title:{display:true, text:'V (L)'} }, y:{ title:{display:true, text:'P (mmHg)'} } } }
+    });
+
+    function addRow(V, P){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${V.toFixed(2)}</td><td>${P.toFixed(0)}</td>`;
+      tbody.appendChild(tr);
+    }
+    function addPoint(V, P){
+      addRow(V, P);
+      chart.data.datasets[0].data.push({ x: V, y: P });
+      chart.update();
+    }
+
+    addBtn.addEventListener('click', () => {
+      const V = parseFloat(volL.value); const P = parseFloat(press.value);
+      if (!Number.isFinite(V) || !Number.isFinite(P)) return alert('Ingresa V (L) y P (mmHg) válidos.');
+      addPoint(V, P);
+      volL.value=''; press.value='';
+    });
+
+    capBtn.addEventListener('click', () => {
+      const V = window.boyle_getV();
+      const P = window.boyle_getP();
+      volL.value = V.toFixed(2);
+      press.value = P.toFixed(0);
+      addPoint(V, P);
+    });
+
+    clrBtn.addEventListener('click', () => {
+      tbody.innerHTML = '';
+      chart.data.datasets[0].data = [];
+      chart.update();
+    });
+
+    // ===== Auto-tests mínimos =====
+    (function tests(){
+      function approx(a,b,eps=1e-6){ return Math.abs(a-b) <= eps; }
+      console.assert(approx(pressureFromVolume(1.0), 760), 'P(1.0L)=760mmHg');
+      console.assert(approx(pressureFromVolume(0.5), 1520), 'P(0.5L)=1520mmHg');
+      console.assert(approx(pressureFromVolume(2.0), 380), 'P(2.0L)=380mmHg');
+      console.assert(approx(pressureFromVolume(0.1), 7600), 'P(0.1L)=7600mmHg');
+    })();
+  })();
+  </script>
+</body>
+</html>

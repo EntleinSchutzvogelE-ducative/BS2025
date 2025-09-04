@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Caída libre — Simulador de entrenamiento</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    .columns { display: flex; flex-direction: row; justify-content: center; align-items: flex-start; gap: 20px; padding: 10px; }
+    .simulator, .data-panel { background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .simulator { width: 500px; height: 500px; position: relative; }
+    .data-panel { width: 500px; min-height: 500px; }
+    #workArea { position: relative; width: 100%; height: 100%; border: 1px solid #ccc; border-radius: 8px; background: linear-gradient(180deg, #fafafa, #f2f2f2); display: flex; justify-content: center; align-items: center; }
+    canvas { background: #fff; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 5px; text-align: center; }
+    .form-row { margin: 10px 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .controls-inline { text-align:center; margin-top:10px; display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; }
+    button { padding:6px 10px; border:1px solid #bbb; background:#eee; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="columns">
+    <!-- Columna izquierda: Simulador (canvas + control) -->
+    <div class="simulator">
+      <div id="workArea">
+        <canvas id="fallCanvas" width="480" height="480"></canvas>
+      </div>
+      <div class="controls-inline">
+        <label for="height">Altura (h, m):</label>
+        <input type="range" id="height" min="0.5" max="100" step="0.5" value="100" />
+        <button id="dropBtn">Soltar</button>
+      </div>
+    </div>
+
+    <!-- Columna derecha: Datos + Gráfica -->
+    <div class="data-panel">
+      <h3>Registro de datos (Caída libre)</h3>
+      <div class="form-row">
+        <label for="hInput">h (m):</label>
+        <input type="number" id="hInput" step="0.5" />
+        <label for="vInput">v (m/s):</label>
+        <input type="number" id="vInput" step="0.1" />
+        <button id="addBtn">Añadir</button>
+    <!--    <button id="captureBtn">Capturar simulador</button> -->
+        <button id="clearBtn">Borrar</button>
+      </div>
+      <table id="dataTable">
+        <thead>
+          <tr><th>h (m)</th><th>v (m/s)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <canvas id="hvChart" width="480" height="300" style="margin-top:10px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart.js (si no carga, el simulador igual funciona) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+  (function(){
+    'use strict';
+
+    const g = 9.8; // m/s^2
+    const hMin = 0.5, hMax = 100;
+    const vFromH = (h)=> Math.sqrt(2*g*h);
+    const vMin = vFromH(hMin), vMax = vFromH(hMax);
+
+    const canvas = document.getElementById('fallCanvas');
+    const ctx = canvas.getContext('2d');
+    const heightRange = document.getElementById('height');
+    const dropBtn = document.getElementById('dropBtn');
+
+    const towerX = 100, towerY = 60, towerW = 60, towerH = 360;
+    const groundTop = 430;
+    const ballR = 10;
+
+    let dropping = false;
+    let t0 = 0;
+    let tFall = 0;
+    let yStart = 0;
+    let yEnd = groundTop - ballR;
+    let vImpact = 0;
+    let showImpact = false; // permanece visible hasta el próximo "Soltar"
+
+    function getH(){ return parseFloat(heightRange.value); }
+    function getV(){ return vFromH(getH()); }
+
+    function draw(yBallOverride){
+      const h = getH();
+      const v = getV();
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // suelo
+      ctx.fillStyle = '#c8e6c9';
+      ctx.fillRect(40, groundTop, 400, 20);
+
+      // torre
+      ctx.fillStyle = '#d1c4e9';
+      ctx.fillRect(towerX, towerY, towerW, towerH);
+
+      // posición inicial según h
+      const fracH = (h - hMin)/(hMax - hMin);
+      const yTop = towerY + (1 - fracH) * towerH;
+      const ballY = (typeof yBallOverride === 'number') ? yBallOverride : yTop;
+      const ballX = towerX + towerW/2;
+
+      // pelota
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballR, 0, Math.PI*2);
+      ctx.fillStyle = '#8bc34a';
+      ctx.fill();
+
+      // barra de altura (izquierda)
+      const barY = towerY; const barH = towerH;
+      const barHx = towerX - 40;
+      ctx.strokeStyle = '#222'; ctx.strokeRect(barHx, barY, 16, barH);
+      const fillHH = ((h - hMin)/(hMax - hMin)) * barH;
+      ctx.fillStyle = '#66bb6a';
+      ctx.fillRect(barHx, barY + barH - fillHH, 16, fillHH);
+      ctx.fillStyle = '#222'; ctx.font='10px Arial';
+      ctx.fillText(`${h.toFixed(1)} m`, barHx - 6, barY - 4);
+
+      // barra de velocidad (derecha) — sin texto arriba
+      const barVx = towerX + towerW + 24;
+      ctx.strokeStyle = '#222'; ctx.strokeRect(barVx, barY, 16, barH);
+      const fillVH = ((v - vMin)/(vMax - vMin)) * barH;
+      ctx.fillStyle = '#4fc3f7';
+      ctx.fillRect(barVx, barY + barH - fillVH, 16, fillVH);
+
+      // etiqueta de g
+      ctx.fillStyle = '#222'; ctx.font='12px Arial';
+      ctx.fillText('g = 9.8 m/s² (sin rozamiento)', 200, 40);
+
+      // velocidad medida al impacto (permanece visible)
+      if (showImpact) {
+        ctx.fillStyle = '#d32f2f';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`v medida: ${vImpact.toFixed(1)} m/s`, ballX + 20, yEnd);
+      }
+    }
+
+    function startDrop(){
+      if (dropping) return;
+      const h = getH();
+      tFall = Math.sqrt(2*h/g);
+      vImpact = Math.sqrt(2*g*h);
+      const fracH = (h - hMin)/(hMax - hMin);
+      yStart = towerY + (1 - fracH) * towerH;
+      dropping = true;
+      showImpact = false; // ocultar hasta el impacto
+      heightRange.disabled = true; dropBtn.disabled = true;
+      t0 = performance.now();
+      requestAnimationFrame(step);
+    }
+
+    function step(now){
+      const speedFactor = 2.5; // aumenta la rapidez de la caída de la esfera
+      const t = (now - t0) / 1000 * speedFactor;
+      let y;
+      if (t >= tFall) {
+        // llega al suelo: mantener la etiqueta visible
+        y = yEnd;
+        dropping = false;
+        showImpact = true;
+        heightRange.disabled = false; dropBtn.disabled = false;
+        draw(y);
+        return;
+      } else {
+        const s = 0.5 * g * t * t;
+        const totalS = 0.5 * g * tFall * tFall;
+        const frac = s / totalS;
+        y = yStart + frac * (yEnd - yStart);
+      }
+      draw(y);
+      if (dropping) requestAnimationFrame(step);
+    }
+
+    heightRange.addEventListener('input', ()=>{ if(!dropping) draw(); });
+    dropBtn.addEventListener('click', startDrop);
+
+    // ===== Panel derecho =====
+    const hInput = document.getElementById('hInput');
+    const vInput = document.getElementById('vInput');
+    const addBtn = document.getElementById('addBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const tbody = document.querySelector('#dataTable tbody');
+
+    // Dibujo inicial del simulador (si algo falla después, al menos se ve)
+    draw();
+
+    // Inicialización segura del gráfico (no bloquea el simulador si falla)
+    let chart = null;
+    (function initChartSafely(){
+      try {
+        if (!window.Chart) throw new Error('Chart.js no disponible');
+        const ctxChart = document.getElementById('hvChart').getContext('2d');
+        chart = new Chart(ctxChart, {
+          type:'scatter',
+          data:{datasets:[{label:'v vs h',data:[],pointBackgroundColor:'#1976d2',borderColor:'#1976d2',showLine:false,pointRadius:4,tension:0}]},
+          options:{responsive:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'h (m)'}},y:{title:{display:true,text:'v (m/s)'}}}}
+        });
+      } catch (e) {
+        console.warn('Gráfica deshabilitada:', e.message);
+      }
+    })();
+
+    function addRow(h,v){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${h.toFixed(1)}</td><td>${v.toFixed(1)}</td>`;
+      tbody.appendChild(tr);
+      if (chart){
+        chart.data.datasets[0].data.push({x:h,y:v});
+        chart.update();
+      }
+    }
+
+    addBtn.addEventListener('click', ()=>{
+      const h = parseFloat(hInput.value);
+      const v = parseFloat(vInput.value);
+      if(isNaN(h) || isNaN(v)) return;
+      addRow(h,v);
+      hInput.value=''; vInput.value='';
+    });
+
+    // “Capturar simulador”: rellena inputs y añade punto (opcional)
+    captureBtn.addEventListener('click', ()=>{
+      const h = getH();
+      const v = getV();
+      hInput.value = h.toFixed(1);
+      vInput.value = v.toFixed(1);
+      addRow(h,v);
+    });
+
+    clearBtn.addEventListener('click', ()=>{
+      tbody.innerHTML='';
+      if (chart){
+        chart.data.datasets[0].data=[];
+        chart.update();
+      }
+    });
+
+  })();
+  </script>
+</body>
+</html>

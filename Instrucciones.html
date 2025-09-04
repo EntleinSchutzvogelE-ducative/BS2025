@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Instrucciones — Reto Bosco Skills 2025</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root{ --bg:#f4f4f4; --ink:#111; --muted:#666; --panel:#ffffff; --edge:#dcdcdc; --accent:#1d4ed8; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:min(980px,96vw);background:var(--panel);border:1px solid var(--edge);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:28px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--edge);padding-bottom:12px;margin-bottom:18px}
+    .logos-left img{height:46px}
+    .logos-right img{height:58px}
+    h1{margin:0 0 8px 0;font-size:26px}
+    p.lead{margin:0 0 12px 0;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media (max-width:840px){.grid{grid-template-columns:1fr}}
+    .panel{border:1px solid var(--edge);border-radius:12px;padding:16px}
+    .panel h3{margin:0 0 6px 0;font-size:18px}
+    ul{margin:8px 0 0 18px}
+    li{margin:6px 0}
+    .note{font-size:13px;color:var(--muted);margin-top:10px}
+    .cta{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:16px}
+    .pill{font-size:12px;color:#065f46;background:#d1fae5;border:1px solid #a7f3d0;padding:4px 8px;border-radius:999px}
+    .video{margin-top:18px;text-align:center}
+    .video p{margin:0 0 8px 0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="logos-left"><img src="logosalesiana.png" alt="Fundación Universitaria Salesiana"></div>
+        <div class="logos-right"><img src="ESE.png" alt="Entlein Schutzvogel E-ducative"></div>
+      </div>
+
+      <h1>Instrucciones del reto STEAM: Ciencias naturales</h1>
+      <p class="lead">Explorarás relaciones entre variables con simuladores de <strong>gases ideales</strong> y un módulo de <strong>entrenamiento</strong> (caída libre). Observa, registra y reflexiona para identificar proporcionalidades y justificar con evidencia.</p>
+
+      <div class="grid">
+        <div class="panel">
+          <h3>¿Qué harás?</h3>
+          <ul>
+            <li><strong>Descripción del simulador:</strong> El reto presentará un simulador que te permitirá obtener relaciones entre dos variables macroscópicas de un gas. Podrás usar una <em>barra de control</em> (debajo del simulador) para obtener distintos valores tanto de la variable independiente como de la dependiente.</li>
+            <li><strong>Registro:</strong> Encima de la gráfica aparecerán <em>celdas</em> donde debes digitar los valores observados en el simulador. Una vez digites los dos valores, pulsa <em>Añadir</em> para construir tu tabla y la nube de puntos.</li>
+            <li>Al completar tus registros, realiza una <strong>captura de pantalla de la gráfica de puntos</strong>, recórtala para dejar solo la gráfica y pégala en la sección de <em>cuestionario</em>.</li>
+            <li><strong>Análisis:</strong> Interpreta el conjunto de puntos y decide si la relación de proporcionalidad es <em>directa</em> o <em>inversa</em>.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Reglas del reto</h3>
+          <ul>
+            <li>Empieza con el simulador de <strong>caída libre</strong>, como entrenamiento para la toma de datos.</li>
+            <li>Para caída libre, registra <strong>al menos 5 pares de datos</strong>.</li>
+            <li>Para los simuladores de gases (Boyle, Charles, Gay‑Lussac y Avogadro), registra <strong>al menos 8 pares de datos</strong>.</li>
+            <li><strong>Es obligatorio:</strong> imprimir pantalla de cada gráfica, seleccionar solo la parte de la gráfica y adjuntarla al final del cuestionario.</li>
+            <li>Toma notas de tus hallazgos para responder el cuestionario y las conclusiones.</li>
+            <li>Avanza únicamente con el botón <strong>Siguiente</strong> (debajo del visor principal).</li>
+          </ul>
+          <p class="note">⏱️ <strong>Tiempo total:</strong> 100 minutos. — Objetivo: <em>hacer reflexivo</em> (Bosco Skills 2025).</p>
+        </div>
+      </div>
+
+      <!-- Bloque opcional de video (sustituye TU_CODIGO por el ID real si decides incluirlo) -->
+      <!--
+      <div class="video">
+        <p><strong>📹 Mira este breve video antes de empezar:</strong></p>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/TU_CODIGO" title="Instrucciones Bosco Skills" frameborder="0" allowfullscreen></iframe>
+      </div>
+      -->
+
+      <div class="cta">
+        <span class="pill">Paso siguiente: Entrenamiento (Caída libre)</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sin botón interno. El avance lo controla el botón «Siguiente» del main.
+  </script>
+</body>
+</html>

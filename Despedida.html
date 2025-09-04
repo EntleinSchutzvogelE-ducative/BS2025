@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Despedida — Reto Bosco Skills 2025</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root{ --bg:#f4f4f4; --ink:#111; --muted:#666; --panel:#ffffff; --edge:#dcdcdc; --accent:#1d4ed8; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:min(880px,96vw);background:var(--panel);border:1px solid var(--edge);
+          border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:28px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+         border-bottom:1px solid var(--edge);padding-bottom:12px;margin-bottom:18px}
+    .logos-left img{height:46px}
+    .logos-right img{height:58px}
+    h1{margin:0 0 10px 0;font-size:28px}
+    p.lead{margin:0 0 16px 0;color:var(--muted)}
+    .check{background:#f8fafc;border:1px solid var(--edge);border-radius:12px;padding:14px;margin:12px 0}
+    .check h3{margin:0 0 8px 0;font-size:18px}
+    .check ul{margin:6px 0 0 18px}
+    .check li{margin:6px 0}
+    .cta{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:14px;cursor:pointer}
+    .ghost{background:#eef2ff;color:#1d4ed8;border:1px solid #c7d2fe}
+    .note{font-size:12px;color:var(--muted)}
+    .credits{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="logos-left"><img src="logosalesiana.png" alt="Fundación Universitaria Salesiana"></div>
+        <div class="logos-right"><img src="ESE.png" alt="Entlein Schutzvogel E-ducative"></div>
+      </div>
+
+      <h1>¡Reto completado! 🎉</h1>
+      <p class="lead">Gracias por tu esfuerzo y curiosidad científica. Antes de salir, revisa esta lista de verificación.</p>
+
+      <div class="check">
+        <h3>Checklist de cierre</h3>
+        <ul>
+          <li>✅ <strong>Caída libre (entrenamiento):</strong> registraste <strong>5 datos</strong>. <em>No puntúa; es práctica.</em></li>
+          <li>✅ <strong>Leyes de gases:</strong> registraste <strong>8 datos</strong> en cada simulador (Boyle, Charles, Gay-Lussac y Avogadro).</li>
+          <li>✅ Pegaste en el cuestionario las <strong>4 capturas</strong> de las gráficas (P-V, V-T, P-T, V-n).</li>
+          <li>✅ Revisaste <strong>unidades</strong> y ejes en tablas y gráficas.</li>
+        </ul>
+      </div>
+
+      <div class="cta">
+        <button class="btn ghost" id="backToQuiz">Volver al Cuestionario (para exportar PDF)</button>
+        <button class="btn" id="homeBtn">Volver a la portada</button>
+        <button class="btn" id="exitBtn">Salir</button>
+      </div>
+      <p class="note">La exportación a PDF se realiza desde el <strong>Cuestionario</strong> usando su botón “Imprimir / Guardar en PDF”. Guarda el PDF antes de salir.</p>
+
+      <div class="credits">
+        <span>Bosco Skills 2025 — Fundación Universitaria Salesiana</span>
+        <span>Laboratorio interactivo: Entlein Schutzvogel E-ducative</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Enviar órdenes al 'main' que contiene el iframe
+    function goTop(target){
+      // Preferimos postMessage (main debe escucharlo) y dejamos un fallback por hash
+      try { window.top.postMessage('goto:' + target, '*'); } catch(e){}
+      try { window.top.location.hash = target; } catch(e){}
+    }
+
+    document.getElementById('backToQuiz').addEventListener('click', ()=> goTop('Cuestionario.html'));
+    document.getElementById('homeBtn').addEventListener('click',     ()=> goTop('Portada.html'));
+    document.getElementById('exitBtn').addEventListener('click',     ()=>{
+      alert('Puedes cerrar esta pestaña o volver a la portada. ¡Gracias por participar!');
+    });
+  </script>
+</body>
+</html>
